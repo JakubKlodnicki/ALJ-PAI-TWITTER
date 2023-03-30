@@ -1,11 +1,18 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+# from mailbox import Message
+import os
+from mailjet_rest import Client
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 import mysql.connector
 import MySQLdb.cursors
 import re
+from flask_mail import Mail, Message
+from itsdangerous import URLSafeTimedSerializer
+import time
 
 app = Flask(__name__)
 
 app.secret_key = 'tomaszogrodnikjestgruby'
+mail = Mail(app)
 
 mysql = mysql.connector.connect(
     host="34.159.139.65",
@@ -13,6 +20,8 @@ mysql = mysql.connector.connect(
     password='zabki62a',
     db = 'twitter',
 )
+
+mailjet = Client(auth=('d4a0e56cd58e2eb358753e75b3152d38', '0c6be36828e9b20a85888c19f17c1101'))
 
 @app.route('/')
 def directtologin():
@@ -32,7 +41,7 @@ def login():
             username = request.form['username']
             password = request.form['password']
             cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
-            cursor.execute('SELECT * FROM accounts WHERE username = %s AND password = %s', (username, password,))
+            cursor.execute('SELECT * FROM accounts WHERE username = %s AND password = %s AND verification = 1', (username, password,))
             account = cursor.fetchone()
             # account = str(account)
             if account:
@@ -42,7 +51,7 @@ def login():
                 session["password"] = password
                 return redirect(url_for('home'))
             else:
-                msg = 'Incorrect username/password!'
+                msg = 'Incorrect username/password or check inbox to verification account'
         return render_template('index.html', msg=msg)
 
 @app.route('/register/', methods=['GET', 'POST'])
@@ -67,12 +76,38 @@ def register():
             elif not username or not password or not email:
                 msg = 'Please fill out the form!'
             else:
-                cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s)', (username, password, email,))
+                session["email"] = email
+                session["confirmemail"] = True
+                cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s, 0)', (username, password, email,))
                 mysql.commit()
-                msg = 'You have successfully registered!'
+                msg = 'You have successfully registered, now only confirm your email in inbox'
+                data = {
+                'FromEmail': 'twitter.technischools@gmail.com',
+                'FromName': 'Twitter Technischools',
+                'Subject': 'Twitter Technischools verification!',
+                'Text-part': 'Hello, Thank you for register, confirm your account clicking link down!',
+                'Html-part': '127.0.0.1:5000/confirm',
+                'Recipients': [{'Email':(email)}]
+                    }
+            result = mailjet.send.create(data=data)
+            return "Mail with verification link has sent, check your inbox"
         elif request.method == 'POST':
             msg = 'Please fill out the form!'
         return render_template('register.html', msg=msg)
+    
+@app.route('/confirm/')
+def confirm():
+    if 'confirmemail' in session:
+        mail = session["email"]
+        mail = str(mail)
+        cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('UPDATE accounts SET verification = 1 where email = %s', (mail,))
+        mysql.commit()
+        session.clear()
+        return render_template('verification-confirm.html')
+    else:
+        return "You not have active session to confirm mail"
+
 
 @app.route('/home/')
 def home():
