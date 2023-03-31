@@ -5,14 +5,12 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import mysql.connector
 import MySQLdb.cursors
 import re
-from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
 import time
 
 app = Flask(__name__)
 
 app.secret_key = 'tomaszogrodnikjestgruby'
-mail = Mail(app)
 
 mysql = mysql.connector.connect(
     host="34.159.139.65",
@@ -112,8 +110,36 @@ def confirm():
 @app.route('/home/')
 def home():
     if 'loggedin' in session:
-        return render_template('home.html', username=session['username'])
-    return redirect(url_for('login'))
+        cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT username, body, "created-at"  FROM posts order by "created-at"')
+        post = cursor.fetchall()
+        print(post)
+
+        
+
+        for _post in post:
+            print (_post)
+        username = post
+        return render_template('home.html', username=session['username'], usernamepost = username,)
+    else:
+        return redirect(url_for('login'))
+
+@app.route('/create-post/', methods=['GET', 'POST'])
+def posting():
+        if 'loggedin' in session:
+            msg = ''
+            if request.method == 'POST' and 'body' in request.form:
+                username=session['username']
+                body = request.form['body']
+                cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+                cursor.execute('INSERT INTO posts VALUES (NULL, %s, %s, CURRENT_TIMESTAMP)', (username, body))
+                mysql.commit()
+                return render_template('createpost.html', username=username, body=body)
+            elif request.method == 'POST':
+                msg = 'Please fill out the form!'
+            return render_template('createpost.html', msg=msg)
+        else:
+            return redirect(url_for('login'))
 
 @app.route('/profile/')
 def profile():

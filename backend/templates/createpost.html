@@ -19,9 +19,10 @@
 		</div>
 	</body>
 </html>
-<p>Welcome back, {{ username }}!</p>
-<h1>Posts:</h1>
-<h2>Author: {{ usernamepost }}</h2>
 
-
-<p>{{ body }}</p>
+<form method="post">
+    <label for="body">Body</label>
+    <textarea name="body" id="body">{{ request.form['body'] }}</textarea>
+    <div class="msg">{{ msg }}</div>
+    <input type="submit" value="Post">
+  </form>
