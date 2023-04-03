@@ -25,3 +25,10 @@
 
 
 <p>{{ body }}</p>
+
+<table border=1>
+	{% for _post in post %}
+		{% include '_post.html' %}
+	{% endfor %}	
+
+</table>

@@ -119,8 +119,8 @@ def home():
 
         for _post in post:
             print (_post)
-        username = post
-        return render_template('home.html', username=session['username'], usernamepost = username,)
+        # username = post
+        return render_template('home.html', username=session['username'], post=post)
     else:
         return redirect(url_for('login'))
 
