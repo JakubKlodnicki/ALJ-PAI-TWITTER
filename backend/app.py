@@ -7,6 +7,7 @@ import MySQLdb.cursors
 import re
 from itsdangerous import URLSafeTimedSerializer
 import time
+import random
 
 app = Flask(__name__)
 
@@ -160,3 +161,56 @@ def logout():
     session['loggedin'] = False
     session.clear()
     return redirect(url_for('login'))
+
+@app.route('/reset/', methods=['GET', 'POST'])
+def reset():
+    if 'loggedin' in session:
+        return redirect(url_for('home'))
+    else:
+        if request.method == 'POST' and 'email' in request.form:
+            email = request.form['email']
+            session["email"] = email
+            code = random.randint(1000,9999)
+            code = str(code)
+            session["code"] = code
+            
+            data = {
+                'FromEmail': 'twitter.technischools@gmail.com',
+                'FromName': 'Twitter Technischools',
+                'Subject': 'Twitter Technischools Reset Password!',
+                'Text-part': 'Hello, here your code to reset password!',
+                'Html-part': (code),
+                'Recipients': [{'Email':(email)}]
+                    }
+            result = mailjet.send.create(data=data)
+            return redirect(url_for('reset2'))
+        return render_template('reset.html')
+        
+@app.route('/reset2/', methods=['GET', 'POST'])
+def reset2():
+    if 'loggedin' in session:
+        return redirect(url_for('home'))
+    else:
+        if request.method == 'POST' and 'code' in request.form:
+            code2 = request.form['code']
+            code = session["code"]
+            if code == code2:
+                return redirect(url_for('reset3'))
+            else:
+                msg = "Incorrent code"
+                return render_template('resetcode.html', msg=msg)
+        return render_template('resetcode.html')
+    
+@app.route('/reset3/', methods=['GET', 'POST'])
+def reset3():
+    if 'loggedin' in session:
+        return redirect(url_for('home'))
+    else:
+        if request.method == 'POST' and 'password' in request.form:
+            email = session["email"]
+            password = request.form['password']
+            cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+            cursor.execute('UPDATE accounts SET password = %s where email = %s', (password,email))
+            mysql.commit()
+            return render_template('password-confirm.html')
+    return render_template('resetpassword.html')
