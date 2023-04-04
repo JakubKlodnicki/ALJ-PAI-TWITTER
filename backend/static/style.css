@@ -145,3 +145,7 @@ body.loggedin {
   padding: 5px;
   margin: 0 0 10px 0;
 }
+.table-cosiek {
+ border-collapse: separate;
+ border-spacing: 15px;   
+}
