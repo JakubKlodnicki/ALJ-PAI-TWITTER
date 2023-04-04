@@ -1,7 +1,7 @@
 # from mailbox import Message
 import os
 from mailjet_rest import Client
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, make_response
 import mysql.connector
 import MySQLdb.cursors
 import re
@@ -108,11 +108,16 @@ def confirm():
         return "You not have active session to confirm mail"
 
 
-@app.route('/home/')
+@app.route('/home/', methods=['GET', 'POST'])
 def home():
     if 'loggedin' in session:
+        if request.method == "POST":
+            data = dict(request.form)
+            users = getusers(data["search"])
+        else:
+            users = []
         cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT username, body, "created-at"  FROM posts order by "created-at"')
+        cursor.execute('SELECT username, body, "created-at", likes  FROM posts order by "created-at"')
         post = cursor.fetchall()
         print(post)
 
@@ -121,7 +126,7 @@ def home():
         for _post in post:
             print (_post)
         # username = post
-        return render_template('home.html', username=session['username'], post=post)
+        return render_template('home.html', username=session['username'], post=post, usr=users)
     else:
         return redirect(url_for('login'))
 
@@ -133,7 +138,7 @@ def posting():
                 username=session['username']
                 body = request.form['body']
                 cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
-                cursor.execute('INSERT INTO posts VALUES (NULL, %s, %s, CURRENT_TIMESTAMP)', (username, body))
+                cursor.execute('INSERT INTO posts VALUES (NULL, %s, %s, CURRENT_TIMESTAMP, 0)', (username, body))
                 mysql.commit()
                 return render_template('createpost.html', username=username, body=body)
             elif request.method == 'POST':
@@ -214,3 +219,17 @@ def reset3():
             mysql.commit()
             return render_template('password-confirm.html')
     return render_template('resetpassword.html')
+
+@app.route('/likeadd/')
+def likeadd():
+    cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('UPDATE posts SET likes = likes + 1')
+    mysql.commit()
+    return redirect(url_for('home'))
+
+
+def getusers(search):
+        cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute("SELECT username FROM `accounts` WHERE `username` LIKE %s OR `email` LIKE %s",("%"+search+"%", "%"+search+"%",))
+        results = cursor.fetchall()
+        return results

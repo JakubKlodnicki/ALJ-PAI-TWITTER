@@ -11,6 +11,23 @@
 		<nav class="navtop">
 			<div>
 				<h1>Twitter</h1>
+				<form method="post">
+					<input type="text" name="search" required>
+					<input type="submit" value="Search">
+				</form>
+				{% if usr | length != 0 %}
+				<table id="demo">
+	{% for u in usr %}
+	<tr style="color: white;">
+	  <td>{{ u[0] }}</td>
+	  <td>{{ u[1] }}</td>
+	  <td>{{ u[2] }}</td>
+	</tr>
+	{% endfor %}
+  </table>
+  {% else %}
+  <div id="demo" style="color: white;">No search results.</div>
+  {% endif %}
                 <a href="{{ url_for('home') }}"><i class="fas fa-home"></i>Home</a>
 				<a href="{{ url_for('profile') }}"><i class="fas fa-user-circle"></i>Profile</a>
                 <a href="{{ url_for('posting') }}">Add Post</a>
