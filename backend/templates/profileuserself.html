@@ -1,0 +1,21 @@
+{% extends 'header.html' %}
+
+{% block content %}
+<h2>Profile Page</h2>
+<div>
+    <table>
+        <tr>
+            <td>Username:</td>
+            <td>{{ username }}</td>
+        </tr>
+        <tr>
+            <td>Following:</td>
+            <td>{{ following }}</td>
+        </tr>
+        <tr>
+            <td>Followers:</td>
+            <td>{{ followers }}</td>
+        </tr>
+    </table>
+</div>
+{% endblock %}

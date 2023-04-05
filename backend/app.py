@@ -238,16 +238,31 @@ def getusers(search):
 @app.route('/user/')
 def profilesearch():
     if 'loggedin' in session:
-            username = session['results']
-            # username=results[0]
+            username2 = session['results']
+            comma_delim = ','
+            username4 = comma_delim.join(username2)
             cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
-            cursor.execute('SELECT username FROM accounts WHERE username = %s', (username))
+            cursor.execute('SELECT username FROM accounts WHERE username = %s', (username2))
             user = cursor.fetchall()
-            cursor.execute('SELECT following FROM accounts WHERE username = %s', (username))
+            cursor.execute('SELECT following FROM accounts WHERE username = %s', (username2))
             following = cursor.fetchall()
-            cursor.execute('SELECT followers FROM accounts WHERE username = %s', (username))
+            cursor.execute('SELECT followers FROM accounts WHERE username = %s', (username2))
             followers = cursor.fetchall()
-            return render_template('profileusers.html', username=user, following=following, followers=followers)
+            username = session['username']
+            comma_delim = ','
+            username3 = comma_delim.join(username2)
+            cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+            cursor.execute('SELECT `from` from followers where `from` = %s and `to` = %s', (username, username3))
+            fromuser = cursor.fetchall()
+            fromuser2 = str(fromuser)
+            fromuser2 = fromuser2.replace("[('", "").replace("',)]", "")
+            if username4 == username:
+                return render_template('profileuserself.html', username=username2, following=following, followers=followers)
+            else:
+                if fromuser2 == username:
+                    return render_template('profileusersunfollow.html', username=username2, following=following, followers=followers)
+                else:
+                    return render_template('profileusersfollow.html', username=username2, following=following, followers=followers)
     else:
         return redirect(url_for('login'))
     
@@ -258,15 +273,20 @@ def followadd():
     comma_delim = ','
     username3 = comma_delim.join(username2)
     cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute('SELECT `from` from followers where `from` = %s and `to` = %s', (username, username3))
-    fromuser = cursor.fetchall()
-    fromuser2 = str(fromuser)
-    fromuser2 = fromuser2.replace("[('", "").replace("',)]", "")
-    if fromuser2 == username:
-        return "You already following this user"
-    else:
-        cursor.execute('UPDATE `accounts` SET `followers` = CASE WHEN followers IS NULL THEN 1 ELSE followers + 1 END WHERE `username` = %s', (username2))
-        cursor.execute('INSERT INTO followers VALUES (NULL, %s, %s)', (username, username3))
-        mysql.commit()
-        return "Followers has been added"
-    # return redirect(url_for('home'))
+    cursor.execute('UPDATE `accounts` SET `followers` = CASE WHEN followers IS NULL THEN 1 ELSE followers + 1 END WHERE `username` = %s', (username2))
+    cursor.execute('INSERT INTO followers VALUES (NULL, %s, %s)', (username, username3))
+    mysql.commit()
+    return redirect(url_for('profilesearch'))
+
+@app.route('/unfollow/')
+def unfollow():
+    username = session['username']
+    username2 = session['results']
+    comma_delim = ','
+    username3 = comma_delim.join(username2)
+    cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('UPDATE `accounts` SET `followers` = `followers` - 1 WHERE `username` = %s', (username2))
+    mysql.commit()
+    cursor.execute('DELETE FROM followers WHERE `from` = %s AND `to` = %s', (username, username3))
+    mysql.commit()
+    return redirect(url_for('profilesearch'))
