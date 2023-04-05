@@ -18,11 +18,7 @@
 				{% if usr | length != 0 %}
 				<table id="demo">
 	{% for u in usr %}
-	<tr style="color: white;">
-	  <td>{{ u[0] }}</td>
-	  <td>{{ u[1] }}</td>
-	  <td>{{ u[2] }}</td>
-	</tr>
+	<a href="{{ url_for('profilesearch') }}">{{ u[0] }}</a>
 	{% endfor %}
   </table>
   {% else %}

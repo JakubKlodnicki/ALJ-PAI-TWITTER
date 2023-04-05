@@ -3,20 +3,20 @@
 {% block content %}
 <h2>Profile Page</h2>
 <div>
-    <p>Your account details are below:</p>
     <table>
         <tr>
             <td>Username:</td>
             <td>{{ username }}</td>
         </tr>
         <tr>
-            <td>Password:</td>
-            <td>{{ password }}</td>
+            <td>Following:</td>
+            <td>{{ following }}</td>
         </tr>
         <tr>
-            <td>Email:</td>
-            <td>{{ email }}</td>
+            <td>Followers:</td>
+            <td>{{ followers }}</td>
         </tr>
     </table>
+    <a href="{{ url_for('followadd') }}">Add Follow</a>
 </div>
 {% endblock %}

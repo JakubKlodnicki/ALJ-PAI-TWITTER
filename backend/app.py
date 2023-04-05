@@ -77,7 +77,7 @@ def register():
             else:
                 session["email"] = email
                 session["confirmemail"] = True
-                cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s, 0)', (username, password, email,))
+                cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s, 0, 0, 0)', (username, password, email,))
                 mysql.commit()
                 msg = 'You have successfully registered, now only confirm your email in inbox'
                 data = {
@@ -230,6 +230,43 @@ def likeadd():
 
 def getusers(search):
         cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute("SELECT username FROM `accounts` WHERE `username` LIKE %s OR `email` LIKE %s",("%"+search+"%", "%"+search+"%",))
+        cursor.execute("SELECT username FROM `accounts` WHERE `username` like %s OR `email` like %s LIMIT 1",("%"+search+"%", "%"+search+"%",))
         results = cursor.fetchall()
+        session['results'] = results[0]
         return results
+
+@app.route('/user/')
+def profilesearch():
+    if 'loggedin' in session:
+            username = session['results']
+            # username=results[0]
+            cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+            cursor.execute('SELECT username FROM accounts WHERE username = %s', (username))
+            user = cursor.fetchall()
+            cursor.execute('SELECT following FROM accounts WHERE username = %s', (username))
+            following = cursor.fetchall()
+            cursor.execute('SELECT followers FROM accounts WHERE username = %s', (username))
+            followers = cursor.fetchall()
+            return render_template('profileusers.html', username=user, following=following, followers=followers)
+    else:
+        return redirect(url_for('login'))
+    
+@app.route('/follow/')
+def followadd():
+    username = session['username']
+    username2 = session['results']
+    comma_delim = ','
+    username3 = comma_delim.join(username2)
+    cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT `from` from followers where `from` = %s and `to` = %s', (username, username3))
+    fromuser = cursor.fetchall()
+    fromuser2 = str(fromuser)
+    fromuser2 = fromuser2.replace("[('", "").replace("',)]", "")
+    if fromuser2 == username:
+        return "You already following this user"
+    else:
+        cursor.execute('UPDATE `accounts` SET `followers` = CASE WHEN followers IS NULL THEN 1 ELSE followers + 1 END WHERE `username` = %s', (username2))
+        cursor.execute('INSERT INTO followers VALUES (NULL, %s, %s)', (username, username3))
+        mysql.commit()
+        return "Followers has been added"
+    # return redirect(url_for('home'))
