@@ -290,3 +290,19 @@ def unfollow():
     cursor.execute('DELETE FROM followers WHERE `from` = %s AND `to` = %s', (username, username3))
     mysql.commit()
     return redirect(url_for('profilesearch'))
+
+@app.route('/following/')
+def following():
+    username=session['username']
+    cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT `to` FROM followers WHERE `from` = %s', (username,))
+    following = cursor.fetchall()
+    return render_template('followinglist.html', following=following)
+
+@app.route('/followers/')
+def followers():
+    username=session['username']
+    cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT `from` FROM followers WHERE `to` = %s', (username,))
+    followers = cursor.fetchall()
+    return render_template('followerslist.html', followers=followers)
