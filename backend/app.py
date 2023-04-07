@@ -157,7 +157,15 @@ def profile():
         email = cursor.fetchall()
         for x in range(2):
             email = email[-1]
-        return render_template('profile.html', username=username, password=password, email=email,)
+        cursor.execute('SELECT following FROM accounts WHERE username = %s', (username,))
+        following = cursor.fetchall()
+        cursor.execute('SELECT followers FROM accounts WHERE username = %s', (username,))
+        followers = cursor.fetchall()
+        following = str(following)
+        following = following.replace("[(", "").replace(",)]", "").replace("None", "0")
+        followers = str(followers)
+        followers = followers.replace("[(", "").replace(",)]", "").replace("None", "0")
+        return render_template('profile.html', username=username, password=password, email=email, following=following, followers=followers)
     else:
         return redirect(url_for('login'))
 
@@ -256,6 +264,11 @@ def profilesearch():
             fromuser = cursor.fetchall()
             fromuser2 = str(fromuser)
             fromuser2 = fromuser2.replace("[('", "").replace("',)]", "")
+            username2 = username.replace("('", "").replace("',)", "")
+            following = str(following)
+            following = following.replace("[(", "").replace(",)]", "").replace("None", "0")
+            followers = str(followers)
+            followers = followers.replace("[(", "").replace(",)]", "").replace("None", "0")
             if username4 == username:
                 return render_template('profileuserself.html', username=username2, following=following, followers=followers)
             else:
@@ -274,6 +287,7 @@ def followadd():
     username3 = comma_delim.join(username2)
     cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute('UPDATE `accounts` SET `followers` = CASE WHEN followers IS NULL THEN 1 ELSE followers + 1 END WHERE `username` = %s', (username2))
+    cursor.execute('UPDATE `accounts` SET `following` = CASE WHEN followers IS NULL THEN 1 ELSE followers + 1 END WHERE `username` = %s', (username,))
     cursor.execute('INSERT INTO followers VALUES (NULL, %s, %s)', (username, username3))
     mysql.commit()
     return redirect(url_for('profilesearch'))
@@ -286,8 +300,8 @@ def unfollow():
     username3 = comma_delim.join(username2)
     cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute('UPDATE `accounts` SET `followers` = `followers` - 1 WHERE `username` = %s', (username2))
-    mysql.commit()
     cursor.execute('DELETE FROM followers WHERE `from` = %s AND `to` = %s', (username, username3))
+    cursor.execute('UPDATE `accounts` SET `following` = `following` - 1 WHERE `username` = %s', (username,))
     mysql.commit()
     return redirect(url_for('profilesearch'))
 
