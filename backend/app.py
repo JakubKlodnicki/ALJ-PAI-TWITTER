@@ -240,8 +240,11 @@ def getusers(search):
         cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute("SELECT username FROM `accounts` WHERE `username` like %s OR `email` like %s LIMIT 1",("%"+search+"%", "%"+search+"%",))
         results = cursor.fetchall()
-        session['results'] = results[0]
-        return results
+        if not results:
+            return results
+        else:
+            session['results'] = results[0]
+            return results
 
 @app.route('/user/')
 def profilesearch():
@@ -311,6 +314,8 @@ def following():
     cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute('SELECT `to` FROM followers WHERE `from` = %s', (username,))
     following = cursor.fetchall()
+    following = str(following)
+    following = following.replace("[]","You dont following anybody").replace("',)","").replace("(","").replace("[('","").replace("[","").replace("]","").replace("'","")
     return render_template('followinglist.html', following=following)
 
 @app.route('/followers/')
@@ -319,4 +324,6 @@ def followers():
     cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
     cursor.execute('SELECT `from` FROM followers WHERE `to` = %s', (username,))
     followers = cursor.fetchall()
+    followers = str(followers)
+    followers = followers.replace("[]","You dont have followers").replace("',)","").replace("(","").replace("[('","").replace("[","").replace("]","").replace("'","")
     return render_template('followerslist.html', followers=followers)
