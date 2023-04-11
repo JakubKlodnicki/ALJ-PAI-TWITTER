@@ -10,15 +10,15 @@
 	<body class="loggedin">
 		<nav class="navtop">
 			<div>
-				<h1>Twitter</h1>
+				<h1>Twittertest</h1>
 				<form method="post">
-					<input type="text" name="search" required>
+					<input type="text" name="search2" required>
 					<input type="submit" value="Search">
 				</form>
 				{% if usr | length != 0 %}
 				<table id="demo">
 	{% for u in usr %}
-	<a href="{{ url_for('profilesearch') }}">{{ u[0] }}</a>
+	<a href="{{ url_for('hashtagssearch') }}">{{ u[0] }}</a>
 	{% endfor %}
   </table>
   {% else %}

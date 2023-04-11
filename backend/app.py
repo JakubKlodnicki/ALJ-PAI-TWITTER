@@ -130,6 +130,28 @@ def home():
     else:
         return redirect(url_for('login'))
 
+@app.route('/home2/', methods=['GET', 'POST'])
+def home2():
+    if 'loggedin' in session:
+        if request.method == "POST":
+            data = dict(request.form)
+            hashtag = gethashtag(data["search2"])
+        else:
+            hashtag = []
+        cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT username, body, "created-at", likes  FROM posts order by "created-at"')
+        post = cursor.fetchall()
+        print(post)
+
+        
+
+        for _post in post:
+            print (_post)
+        # username = post
+        return render_template('home2.html', username=session['username'], post=post, usr=hashtag)
+    else:
+        return redirect(url_for('login'))
+
 @app.route('/create-post/', methods=['GET', 'POST'])
 def posting():
         if 'loggedin' in session:
@@ -245,6 +267,16 @@ def getusers(search):
         else:
             session['results'] = results[0]
             return results
+        
+def gethashtag(search2):
+        cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute("SELECT body FROM `posts` WHERE `body` like %s LIMIT 1",("%"+search2+"%",))
+        results = cursor.fetchall()
+        if not results:
+            return results
+        else:
+            session['results'] = results[0]
+            return results
 
 @app.route('/user/')
 def profilesearch():
@@ -279,6 +311,20 @@ def profilesearch():
                     return render_template('profileusersunfollow.html', username=username2, following=following, followers=followers)
                 else:
                     return render_template('profileusersfollow.html', username=username2, following=following, followers=followers)
+    else:
+        return redirect(url_for('login'))
+    
+
+@app.route('/hashtags/')
+def hashtagssearch():
+    if 'loggedin' in session:
+            hashtag = session['results']
+            comma_delim = ','
+            # hashtag = comma_delim.join(hashtag)
+            cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+            cursor.execute('SELECT body FROM posts WHERE body = %s', (hashtag))
+            hashtag = cursor.fetchall()
+            return render_template('hashtagsearch.html', body=hashtag,)
     else:
         return redirect(url_for('login'))
     

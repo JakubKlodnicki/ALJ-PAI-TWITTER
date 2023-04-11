@@ -1,0 +1,17 @@
+{% extends 'header3.html' %}
+
+{% block content %}
+<p>Welcome back, {{ username }}!</p>
+<h1>Posts:</h1>
+<h2>Author: {{ usernamepost }}</h2>
+
+
+<p>{{ body }}</p>
+
+<table border=1 class="table-cosiek">
+	{% for _post in post %}
+		{% include '_post.html' %}
+	{% endfor %}	
+
+</table>
+{% endblock %}
