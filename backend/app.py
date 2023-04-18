@@ -258,13 +258,30 @@ def likeadd(body):
     results = str(results)
     results = results.replace("[('", "").replace("',)]", "")
     if results == body:
-        return "U arleady liked this post"
+        return "U already liked this post"
     else:
         cursor.execute('UPDATE posts SET likes = likes + 1 where body = %s',(body,))
         cursor.execute('INSERT INTO likes VALUES (NULL, %s, %s)', (username, body))
         mysql.commit()
     print(results)
     print(body)
+    return redirect(url_for('home'))
+
+@app.route('/<body>/dislike', methods=['GET', 'POST'])
+def dislike(body):
+    username=session['username']
+    cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('SELECT `to` from likes where `from` = %s and `to` = %s',(username,body,))
+    results = cursor.fetchall()
+    results = str(results)
+    results = results.replace("[('", "").replace("',)]", "")
+    if results == body:
+        cursor.execute('UPDATE posts SET likes = likes - 1 where body = %s',(body,))
+        cursor.execute('DELETE from likes where `from` = %s and `to` = %s', (username, body))
+        mysql.commit()
+
+    else:
+        return "U dont liked this post"
     return redirect(url_for('home'))
 
 
