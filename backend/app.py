@@ -122,7 +122,6 @@ def home():
         print(post)
 
         
-
         for _post in post:
             print (_post)
         # username = post
@@ -250,11 +249,22 @@ def reset3():
             return render_template('password-confirm.html')
     return render_template('resetpassword.html')
 
-@app.route('/likeadd/')
-def likeadd():
+@app.route('/<body>/likeadd', methods=['GET', 'POST'])
+def likeadd(body):
+    username=session['username']
     cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
-    cursor.execute('UPDATE posts SET likes = likes + 1')
-    mysql.commit()
+    cursor.execute('SELECT `to` from likes where `from` = %s and `to` = %s',(username,body,))
+    results = cursor.fetchall()
+    results = str(results)
+    results = results.replace("[('", "").replace("',)]", "")
+    if results == body:
+        return "U arleady liked this post"
+    else:
+        cursor.execute('UPDATE posts SET likes = likes + 1 where body = %s',(body,))
+        cursor.execute('INSERT INTO likes VALUES (NULL, %s, %s)', (username, body))
+        mysql.commit()
+    print(results)
+    print(body)
     return redirect(url_for('home'))
 
 
