@@ -254,7 +254,8 @@ def likeadd(body):
     results = str(results)
     results = results.replace("[('", "").replace("',)]", "")
     if results == body:
-        return "U already liked this post"
+        flash('You were liked this post before')
+        return redirect(url_for('home'))
     else:
         cursor.execute('UPDATE posts SET likes = likes + 1 where body = %s',(body,))
         cursor.execute('INSERT INTO likes VALUES (NULL, %s, %s)', (username, body))
@@ -275,7 +276,8 @@ def dislike(body):
         mysql.commit()
 
     else:
-        return "U dont liked this post"
+        flash('You dont liked this post before')
+        return redirect(url_for('home'))
     return redirect(url_for('home'))
 
 
