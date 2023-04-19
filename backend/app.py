@@ -119,8 +119,6 @@ def home():
         cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT username, body, "created-at", likes  FROM posts order by "created-at"')
         post = cursor.fetchall()
-        print(post)
-
         
         for _post in post:
             print (_post)
@@ -140,8 +138,6 @@ def home2():
         cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT username, body, "created-at", likes  FROM posts order by "created-at"')
         post = cursor.fetchall()
-        print(post)
-
         
 
         for _post in post:
@@ -263,8 +259,6 @@ def likeadd(body):
         cursor.execute('UPDATE posts SET likes = likes + 1 where body = %s',(body,))
         cursor.execute('INSERT INTO likes VALUES (NULL, %s, %s)', (username, body))
         mysql.commit()
-    print(results)
-    print(body)
     return redirect(url_for('home'))
 
 @app.route('/<body>/dislike', methods=['GET', 'POST'])
@@ -400,3 +394,25 @@ def followers():
     followers = str(followers)
     followers = followers.replace("[]","You dont have followers").replace("',)","").replace("(","").replace("[('","").replace("[","").replace("]","").replace("'","")
     return render_template('followerslist.html', followers=followers)
+
+@app.route('/myposts/', methods=['GET', 'POST'])
+def myposts():
+    if 'loggedin' in session:
+        username=session['username']
+        cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+        cursor.execute('SELECT body, created_at, likes  FROM posts where username = %s order by created_at',(username,))
+        post = cursor.fetchall()
+        
+        for _post2 in post:
+            print (_post2)
+        return render_template('myposts.html',post=post,)
+    else:
+        return redirect(url_for('login'))
+    
+@app.route('/<body>/deletepost', methods=['GET', 'POST'])
+def deletepost(body):
+    username=session['username']
+    cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
+    cursor.execute('DELETE from posts where `username` = %s and `body` = %s', (username, body))
+    mysql.commit()
+    return redirect(url_for('myposts'))
