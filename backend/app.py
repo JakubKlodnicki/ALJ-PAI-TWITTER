@@ -1,15 +1,17 @@
 # from mailbox import Message
 import os
 from mailjet_rest import Client
-from flask import Flask, render_template, request, redirect, url_for, session, flash, make_response
+from flask import Flask, jsonify, request, redirect, url_for, session, flash, make_response, render_template
 import mysql.connector
 import MySQLdb.cursors
 import re
 from itsdangerous import URLSafeTimedSerializer
 import time
 import random
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 app.secret_key = 'tomaszogrodnikjestgruby'
 
@@ -28,7 +30,6 @@ def directtologin():
         return redirect(url_for('home'))
     else:
         return redirect(url_for('login'))
-            
 
 @app.route('/login/', methods=['GET', 'POST'])
 def login():
@@ -36,22 +37,20 @@ def login():
         return redirect(url_for('home'))
     else:
         msg = ''
-        if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
-            username = request.form['username']
-            password = request.form['password']
+        if request.method == 'POST' and 'username' in request.json and 'password' in request.json:
+            username = request.json['username']
+            password = request.json['password']
             cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
             cursor.execute('SELECT * FROM accounts WHERE username = %s AND password = %s AND verification = 1', (username, password,))
             account = cursor.fetchone()
-            # account = str(account)
             if account:
                 session['loggedin'] = True
-                # session["id"] = account['id']
                 session["username"] = username
                 session["password"] = password
-                return redirect(url_for('home'))
+                return jsonify({'success': True, 'message': 'Zalogowano pomyślnie!'})
             else:
-                msg = 'Incorrect username/password or check inbox to verification account'
-        return render_template('index.html', msg=msg)
+                msg = 'Nieprawidłowa nazwa użytkownika/hasło lub sprawdź skrzynkę odbiorczą, aby zweryfikować konto.'
+        return jsonify({'success': False, 'message': msg})
 
 @app.route('/register/', methods=['GET', 'POST'])
 def register():
@@ -89,10 +88,10 @@ def register():
                 'Recipients': [{'Email':(email)}]
                     }
             result = mailjet.send.create(data=data)
-            return "Mail with verification link has sent, check your inbox"
+            return jsonify({'message': 'Mail with verification link has been sent, check your inbox'})
         elif request.method == 'POST':
             msg = 'Please fill out the form!'
-        return render_template('register.html', msg=msg)
+        return jsonify({'message': msg})
     
 @app.route('/confirm/')
 def confirm():
@@ -107,7 +106,6 @@ def confirm():
     else:
         return "You not have active session to confirm mail"
 
-
 @app.route('/home/', methods=['GET', 'POST'])
 def home():
     if 'loggedin' in session:
@@ -119,13 +117,15 @@ def home():
         cursor = mysql.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT username, body, "created-at", likes  FROM posts order by "created-at"')
         post = cursor.fetchall()
-        
+
         for _post in post:
-            print (_post)
-        # username = post
-        return render_template('home.html', username=session['username'], post=post, usr=users)
+            print(_post)
+
+        response = {'username': session['username'], 'post': post,'usr': users}
+        return jsonify(response)
     else:
-        return redirect(url_for('login'))
+        return jsonify({'message': 'Unauthorized access'})
+
 
 @app.route('/home2/', methods=['GET', 'POST'])
 def home2():
